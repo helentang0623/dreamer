@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>界面 3 · 待定</title>
+<style>
+  :root{
+    --cream: #f8efdb;
+    --gold:  #f2d7a2;
+  }
+  html, body{ height: 100%; margin: 0; }
+  body{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.6rem;
+    background: #241a11;
+    background-image: radial-gradient(ellipse at 50% 40%,
+      rgba(255, 214, 160, .13) 0%,
+      rgba(255, 214, 160, .04) 42%,
+      rgba(0, 0, 0, 0) 72%);
+    color: var(--cream);
+    font-family: "Songti SC", "Noto Serif SC", "Source Han Serif SC",
+                 "STSong", "SimSun", Georgia, serif;
+    -webkit-font-smoothing: antialiased;
+    text-align: center;
+    padding: 6vw;
+  }
+  h1{
+    margin: 0;
+    font-size: clamp(1.3rem, 3.4vw, 2.4rem);
+    font-weight: 400;
+    letter-spacing: .2em;
+    text-indent: .2em;
+    text-shadow: 0 0 40px rgba(255, 226, 180, .22);
+  }
+  p{
+    margin: 0;
+    font-size: clamp(.72rem, 1.2vw, .9rem);
+    letter-spacing: .32em;
+    text-indent: .32em;
+    color: rgba(242, 215, 162, .62);
+  }
+  a{
+    margin-top: 1.2rem;
+    font-size: clamp(.72rem, 1.2vw, .88rem);
+    letter-spacing: .26em;
+    text-indent: .26em;
+    color: var(--gold);
+    text-decoration: none;
+    border-bottom: 1px solid rgba(242, 215, 162, .28);
+    padding-bottom: .32em;
+    transition: border-color .35s ease, color .35s ease;
+  }
+  a:hover{
+    color: #ffe9c4;
+    border-color: rgba(255, 233, 196, .75);
+  }
+</style>
+</head>
+<body>
+  <h1>界面 3</h1>
+  <p>内容待定</p>
+  <a href="index.html">← 回到镜子</a>
+</body>
+</html>

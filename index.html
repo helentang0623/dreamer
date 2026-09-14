@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>镜子是通往另一个宇宙的通道</title>
+<style>
+  :root{
+    --cream: #f8efdb;          /* 暖奶油 —— 与 mirror.png 的 #f8e8b8 同源 */
+    --gold:  #f2d7a2;          /* 柔金   —— 文字与装饰 */
+    --ink:   #2b1d11;          /* 深棕   —— 阴影，避免纯黑的冷硬 */
+    --glow:  #ffd9a0;          /* 微光   —— 光标处的暖光 */
+  }
+
+  *{ box-sizing: border-box; }
+
+  html, body{
+    height: 100%;
+    margin: 0;
+  }
+
+  body{
+    overflow: hidden;
+    background: #1b140d url('mirror.png') center / cover no-repeat;
+    font-family: "Songti SC", "Noto Serif SC", "Source Han Serif SC",
+                 "STSong", "SimSun", Georgia, "Times New Roman", serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* 悬停在镜子上时，整页光标变成手型 */
+  body.is-mirror{ cursor: pointer; }
+
+  /* ── 底部柔光遮罩：让文字在画面下缘依然清晰，却不压暗主体 ── */
+  .scrim{
+    position: fixed;
+    inset: auto 0 0 0;
+    height: 46%;
+    pointer-events: none;
+    z-index: 2;
+    background: linear-gradient(
+      to top,
+      rgba(28, 18, 8, .58) 0%,
+      rgba(28, 18, 8, .34) 34%,
+      rgba(28, 18, 8, .12) 66%,
+      rgba(28, 18, 8, 0)   100%
+    );
+  }
+
+  /* ── 题词 ── */
+  .verse{
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 15%;
+    z-index: 3;
+    margin: 0;
+    padding: 0 6vw;
+    text-align: center;
+    pointer-events: none;
+
+    font-size: clamp(1.35rem, 3.6vw, 3rem);
+    font-weight: 400;
+    line-height: 1.7;
+    letter-spacing: .18em;
+    text-indent: .18em;            /* 抵消末字后的字距，保证视觉居中 */
+    color: var(--cream);
+    text-shadow:
+      0 1px 2px   rgba(43, 29, 17, .55),
+      0 4px 22px  rgba(43, 29, 17, .50),
+      0 0 46px    rgba(255, 226, 180, .20);
+
+    opacity: 0;
+    transform: translateY(14px);
+    animation: rise 1.5s cubic-bezier(.22, .61, .36, 1) .25s forwards;
+  }
+
+  /* 题词上方的细金线与小菱形 */
+  .verse::before{
+    content: "";
+    display: block;
+    width: min(220px, 34vw);
+    height: 1px;
+    margin: 0 auto clamp(1.1rem, 2.6vw, 1.9rem);
+    background: linear-gradient(
+      to right,
+      rgba(242, 215, 162, 0) 0%,
+      rgba(242, 215, 162, .72) 50%,
+      rgba(242, 215, 162, 0) 100%
+    );
+  }
+
+  @keyframes rise{
+    to{ opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── 进入提示：当光标落在镜子上时淡入 ── */
+  .hint{
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 6.5%;
+    z-index: 3;
+    margin: 0;
+    text-align: center;
+    pointer-events: none;
+
+    font-size: clamp(.7rem, 1.15vw, .88rem);
+    letter-spacing: .5em;
+    text-indent: .5em;
+    color: var(--gold);
+    text-shadow: 0 2px 14px rgba(43, 29, 17, .7);
+
+    opacity: 0;
+    transform: translateY(6px);
+    transition: opacity .55s ease, transform .55s ease;
+  }
+
+  body.is-mirror .hint{
+    opacity: .92;
+    transform: translateY(0);
+  }
+
+  /* ── 随光标移动的微光 ── */
+  .glow{
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 4;
+    width: 340px;
+    height: 340px;
+    margin: 0;
+    pointer-events: none;
+    border-radius: 50%;
+    mix-blend-mode: screen;        /* 与暖色画面自然叠加，只提亮不覆盖 */
+    background:
+      radial-gradient(circle at center,
+        rgba(255, 240, 210, .50) 0%,
+        rgba(255, 217, 160, .30) 18%,
+        rgba(255, 200, 140, .14) 40%,
+        rgba(255, 190, 130, .05) 64%,
+        rgba(255, 190, 130, 0)   100%);
+    opacity: 0;
+    transform: translate3d(-50vw, -50vh, 0);
+    transition: opacity .45s ease;
+    will-change: transform, opacity;
+  }
+
+  body.is-mirror .glow{ opacity: 1; }
+
+  /* 轻微呼吸，让微光像活的 */
+  body.is-mirror .glow::after{
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    background: radial-gradient(circle at center,
+      rgba(255, 245, 225, .22) 0%,
+      rgba(255, 235, 200, 0) 55%);
+    animation: breathe 3.4s ease-in-out infinite;
+  }
+
+  @keyframes breathe{
+    0%, 100%{ transform: scale(.86); opacity: .55; }
+    50%     { transform: scale(1.06); opacity: 1; }
+  }
+
+  /* 光标正中心的亮点 */
+  .glow-core{
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 5;
+    width: 16px;
+    height: 16px;
+    pointer-events: none;
+    border-radius: 50%;
+    mix-blend-mode: screen;
+    background: radial-gradient(circle at center,
+      rgba(255, 252, 244, .78) 0%,
+      rgba(255, 233, 195, .34) 45%,
+      rgba(255, 220, 170, 0)  100%);
+    opacity: 0;
+    transform: translate3d(-50vw, -50vh, 0);
+    transition: opacity .45s ease;
+    will-change: transform, opacity;
+  }
+
+  body.is-mirror .glow-core{ opacity: 1; }
+
+  /* ── 调试描边：把 MIRROR.debug 改成 true 即可显示镜子判定区 ── */
+  .debug-outline{
+    position: fixed;
+    z-index: 6;
+    display: none;
+    pointer-events: none;
+    border: 1px dashed rgba(255, 122, 84, .9);
+    border-radius: 50%;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, .25) inset;
+  }
+
+  body.debug .debug-outline{ display: block; }
+
+  @media (prefers-reduced-motion: reduce){
+    .verse{ animation-duration: .01ms; opacity: 1; transform: none; }
+    body.is-mirror .glow::after{ animation: none; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="scrim" aria-hidden="true"></div>
+
+  <p class="verse">镜子是通往另一个宇宙的通道</p>
+
+  <p class="hint" aria-hidden="true">轻触镜子 · 进入</p>
+
+  <div class="glow"      id="glow"      aria-hidden="true"></div>
+  <div class="glow-core" id="glowCore"  aria-hidden="true"></div>
+  <div class="debug-outline" id="debugOutline" aria-hidden="true"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* ══════════════════════════════════════════════════════════════
+     镜子判定区（可微调）
+     以视口中心为基准的椭圆，比例随窗口自适应。
+     若判定区与画面中的镜子对不齐：
+       1. 把 debug 改成 true，刷新后会出现红色虚线椭圆；
+       2. 调整下面四个比例值，直到虚线圈住镜子；
+       3. 调好后再把 debug 改回 false。
+     ══════════════════════════════════════════════════════════════ */
+  var MIRROR = {
+    cx: 0.50,    // 镜子中心 X：占视口宽度比例（0=最左，1=最右）
+    cy: 0.50,    // 镜子中心 Y：占视口高度比例（0=最上，1=最下）
+    rx: 0.24,    // 椭圆横向半径：占视口宽度比例
+    ry: 0.40,    // 椭圆纵向半径：占视口高度比例
+    debug: false // true = 显示红色虚线判定框
+  };
+
+  var NEXT_PAGE = 'page2.html';   // 点击镜子后跳转的界面
+
+  /* 界面 2 要放这段视频（约 4.7MB）。鼠标一碰到镜子就先开始缓冲，
+     等真的按下去时往往已经拉得差不多了，不至于先黑一会儿屏。 */
+  var WARM_ASSET = 'tunnel.mp4';
+  var warmed = false;
+
+  function warmNext() {
+    if (warmed) return;
+    warmed = true;
+    var v = document.createElement('video');
+    v.preload = 'auto';
+    v.muted = true;
+    v.src = WARM_ASSET;
+    v.style.cssText = 'position:absolute;width:0;height:0;opacity:0;pointer-events:none';
+    document.body.appendChild(v);
+    v.load();
+  }
+
+  var body        = document.body;
+  var glow        = document.getElementById('glow');
+  var glowCore    = document.getElementById('glowCore');
+  var debugOutline= document.getElementById('debugOutline');
+
+  if (MIRROR.debug) body.classList.add('debug');
+
+  /* 判定：归一化椭圆方程 ((x-cx)/rx)² + ((y-cy)/ry)² ≤ 1 */
+  function inMirror(x, y) {
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+    var dx = (x - MIRROR.cx * vw) / (MIRROR.rx * vw);
+    var dy = (y - MIRROR.cy * vh) / (MIRROR.ry * vh);
+    return dx * dx + dy * dy <= 1;
+  }
+
+  /* 调试描边跟随窗口尺寸 */
+  function layoutDebugOutline() {
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+    var w  = 2 * MIRROR.rx * vw;
+    var h  = 2 * MIRROR.ry * vh;
+    debugOutline.style.width  = w + 'px';
+    debugOutline.style.height = h + 'px';
+    debugOutline.style.left   = (MIRROR.cx * vw - w / 2) + 'px';
+    debugOutline.style.top    = (MIRROR.cy * vh - h / 2) + 'px';
+  }
+
+  /* 微光带一点延迟地跟随光标，比硬跟更柔和 */
+  var targetX = 0, targetY = 0;   // 光标位置
+  var lightX  = 0, lightY  = 0;   // 微光当前位置
+  var hovering = false;           // 光标是否在镜子上
+  var rafId = null;
+
+  function animateLight() {
+    lightX += (targetX - lightX) * 0.18;
+    lightY += (targetY - lightY) * 0.18;
+    glow.style.transform     = 'translate3d(' + (lightX - 170) + 'px,' + (lightY - 170) + 'px,0)';
+    glowCore.style.transform = 'translate3d(' + (lightX - 8)   + 'px,' + (lightY - 8)   + 'px,0)';
+
+    if (hovering || Math.abs(targetX - lightX) > 0.5 || Math.abs(targetY - lightY) > 0.5) {
+      rafId = requestAnimationFrame(animateLight);
+    } else {
+      rafId = null;
+    }
+  }
+
+  function kickAnimation() {
+    if (rafId === null) rafId = requestAnimationFrame(animateLight);
+  }
+
+  /* 把光标位置换算成视口坐标（同时兼容不支持 clientX 的老式事件） */
+  function coords(ev) {
+    return { x: ev.clientX, y: ev.clientY };
+  }
+
+  window.addEventListener('pointermove', function (ev) {
+    var p = coords(ev);
+    targetX = p.x;
+    targetY = p.y;
+
+    if (!lightX && !lightY) {         // 首次进入：微光直接就位，避免从角落飞过来
+      lightX = targetX;
+      lightY = targetY;
+    }
+
+    var hit = inMirror(p.x, p.y);
+    if (hit !== hovering) {
+      hovering = hit;
+      body.classList.toggle('is-mirror', hit);
+      if (hit) warmNext();
+    }
+    kickAnimation();
+  }, { passive: true });
+
+  /* 光标离开窗口：收起微光（relatedTarget 为 null 才是真的离开文档） */
+  document.addEventListener('pointerout', function (ev) {
+    if (ev.relatedTarget) return;
+    hovering = false;
+    body.classList.remove('is-mirror');
+    kickAnimation();
+  });
+
+  /* 只有落在镜子上的点击才会跳转 */
+  window.addEventListener('pointerup', function (ev) {
+    if (ev.button !== undefined && ev.button !== 0) return;   // 只响应左键/轻触
+    var p = coords(ev);
+    if (inMirror(p.x, p.y)) {
+      window.location.href = NEXT_PAGE;
+    }
+  });
+
+  window.addEventListener('resize', layoutDebugOutline);
+
+  layoutDebugOutline();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>· 通 道 ·</title>
+<style>
+  *{ box-sizing: border-box; }
+
+  html, body{ height: 100%; margin: 0; }
+
+  body{
+    overflow: hidden;
+    background: #0b0616;
+    font-family: "Songti SC", "Noto Serif SC", "STSong", "SimSun", Georgia, serif;
+  }
+
+  /* ── 视频：铺满整屏 ── */
+  .film{
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;          /* 填满画面；隧道类画面裁掉边缘比留黑边好看 */
+    display: block;
+    background: #0b0616;
+    opacity: 0;
+    transition: opacity .7s ease;
+    will-change: opacity;
+  }
+
+  body.playing .film{ opacity: 1; }
+
+  /* ── 加载中：一点呼吸的微光，不抢戏，也不至于让人以为页面死了 ── */
+  .wait{
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+    background: radial-gradient(ellipse 70% 60% at 50% 50%,
+      rgba(96, 44, 168, .38) 0%,
+      rgba(30, 12, 58, .18) 46%,
+      rgba(11, 6, 22, 0)    74%);
+    transition: opacity .7s ease;
+  }
+
+  body.playing .wait{ opacity: 0; }
+
+  .wait span{
+    display: block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: rgba(238, 214, 255, .9);
+    box-shadow: 0 0 14px 4px rgba(200, 140, 255, .55);
+    animation: breathe 1.6s ease-in-out infinite;
+  }
+
+  @keyframes breathe{
+    0%, 100%{ transform: scale(.6);  opacity: .30; }
+    50%     { transform: scale(1.15); opacity: 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .wait span{ animation: none; opacity: .7; }
+  }
+</style>
+</head>
+<body>
+
+  <video class="film" id="film"
+         src="tunnel.mp4"
+         muted autoplay playsinline preload="auto"
+         disablepictureinpicture
+         aria-hidden="true"></video>
+
+  <div class="wait" id="wait" aria-hidden="true"><span></span></div>
+
+  <noscript><meta http-equiv="refresh" content="6;url=page3.html"></noscript>
+
+<script>
+(function () {
+  'use strict';
+
+  var NEXT_PAGE = 'page3.html';
+
+  var film = document.getElementById('film');
+  var left  = false;
+
+  function go() {
+    if (left) return;
+    left = true;
+    window.location.href = NEXT_PAGE;
+  }
+
+  /* 播完就跳 */
+  film.addEventListener('ended', go);
+
+  /* 视频本身出问题（文件缺失 / 解码失败）也别把人卡在这一页 */
+  film.addEventListener('error', go);
+
+  /* 兜底：一直没播出来也不超过 25 秒 */
+  var watch = setTimeout(go, 25000);
+
+  /* 一旦开始播（或拿到片长），就按"片长 + 余量"重新盯 —— 中途卡住也走得掉 */
+  function arm() {
+    if (!isFinite(film.duration) || film.duration <= 0) return;
+    clearTimeout(watch);
+    watch = setTimeout(go, (film.duration + 3) * 1000);
+  }
+
+  film.addEventListener('loadedmetadata', arm);
+
+  film.addEventListener('playing', function () {
+    document.body.classList.add('playing');
+    arm();
+  });
+
+  /* 静音自动播放各浏览器都允许；万一仍被拦下，
+     等用户碰一下页面再试，同时兜底计时器照样在跑。 */
+  film.muted = true;
+  var p = film.play();
+  if (p && typeof p.catch === 'function') {
+    p.catch(function () {
+      function retry() {
+        window.removeEventListener('pointerdown', retry);
+        window.removeEventListener('keydown', retry);
+        film.play().catch(function () {});
+      }
+      window.addEventListener('pointerdown', retry, { once: true });
+      window.addEventListener('keydown', retry, { once: true });
+    });
+  }
+})();
+</script>
+</body>
+</html>
