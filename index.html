@@ -201,9 +201,154 @@
 
   body.debug .debug-outline{ display: block; }
 
+  /* ══════════════════════════════════════════════════════════════
+     穿越：点下镜子之后的迷雾 / 星流
+     动的东西一律只用 transform + opacity（外加画布上的线条），
+     完全不用 filter / mask / mix-blend-mode —— 那三样才是上次卡的根源，
+     因为它们会逼浏览器每帧重新栅格化。这里每层都能直接交给 GPU 合成。
+     ══════════════════════════════════════════════════════════════ */
+  .warp{
+    position: fixed;
+    inset: 0;
+    z-index: 8;
+    pointer-events: none;
+    opacity: 0;
+    visibility: hidden;
+    background-color: #06020f;              /* 不透明底，随 opacity 一起盖住镜子那张图 */
+    background-image: radial-gradient(ellipse 80% 68% at 50% 46%,
+      #2e1268 0%, #1a0842 34%, #0a0418 66%, #06020f 88%);
+    transition: opacity .5s ease, visibility 0s linear .5s;
+  }
+
+  body.warping .warp{
+    opacity: 1;
+    visibility: visible;
+    transition: opacity .5s ease, visibility 0s;
+  }
+
+  /* 星流画布 */
+  .warp canvas{
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+
+  /* ── 雾：几团柔软的椭圆，慢慢飘、慢慢亮灭 ── */
+  .mist{ position: absolute; inset: 0; }
+
+  .mist i{
+    position: absolute;
+    display: block;
+    border-radius: 50%;
+    opacity: 0;
+    /* 必须是 closest-side：默认的 farthest-corner 会以「外接方框的角」为 100%，
+       而 border-radius:50% 是在内切圆处裁掉的 —— 也就是衰减才走到 70.7% 就被切了，
+       alpha 还剩近三成，于是每团雾都带一圈生硬的边。
+       用 closest-side 让渐变终点正好落在裁切线上，边缘才真正化开。
+       多段插值是为了接近高斯衰减：线性锥体一堆叠起来也还是会看出圆边。 */
+    background-image: radial-gradient(circle closest-side at center,
+      rgba(var(--rgb, 160,110,255), calc(var(--a, .45) * 1.00))   0%,
+      rgba(var(--rgb, 160,110,255), calc(var(--a, .45) * 0.80))  20%,
+      rgba(var(--rgb, 160,110,255), calc(var(--a, .45) * 0.52))  40%,
+      rgba(var(--rgb, 160,110,255), calc(var(--a, .45) * 0.28))  60%,
+      rgba(var(--rgb, 160,110,255), calc(var(--a, .45) * 0.11))  78%,
+      rgba(var(--rgb, 160,110,255), calc(var(--a, .45) * 0.03))  91%,
+      rgba(var(--rgb, 160,110,255), 0) 100%);
+    will-change: transform, opacity;
+  }
+
+  body.warping .mist i{
+    animation: mistDrift var(--md, 10s) linear var(--mdel, 0s) infinite;
+  }
+
+  /* 从较小较暗，一边飘一边大幅铺开、变亮，最后化掉。
+     周期必须短（几秒）——整个转场只有 3 秒，
+     周期太长的话雾还没亮起来人就已经到下一页了。 */
+  @keyframes mistDrift{
+    0%  { opacity: 0;   transform: translate3d(0, 0, 0) scale(.40); }
+    16% { opacity: .52; }
+    55% { opacity: .38; }
+    100%{ opacity: 0;   transform: translate3d(var(--mx, 10vw), var(--my, 8vh), 0) scale(2.3); }
+  }
+
+  /* 边缘的六团：从画面四周慢慢飘过 */
+  .m1{ left:-16vmax; top:-12vmax; width:52vmax; height:52vmax;
+       --rgb: 150, 90,255; --a: .62; --mx:  18vw; --my:  12vh; --md: 5.2s; --mdel:  0s; }
+  .m2{ left: 52vmax; top:-18vmax; width:58vmax; height:58vmax;
+       --rgb: 255, 90,190; --a: .48; --mx: -16vw; --my:  16vh; --md: 6.6s; --mdel: .5s; }
+  .m3{ left:-12vmax; top: 38vmax; width:48vmax; height:48vmax;
+       --rgb:  70,130,255; --a: .56; --mx:  14vw; --my: -14vh; --md: 5.6s; --mdel: .9s; }
+  .m4{ left: 56vmax; top: 42vmax; width:46vmax; height:46vmax;
+       --rgb: 120,230,255; --a: .40; --mx: -18vw; --my: -10vh; --md: 7.0s; --mdel: .3s; }
+  .m5{ left: 24vmax; top:-22vmax; width:54vmax; height:54vmax;
+       --rgb: 220,130,255; --a: .50; --mx:   6vw; --my:  20vh; --md: 4.6s; --mdel:1.1s; }
+  .m6{ left:-18vmax; top:  8vmax; width:44vmax; height:44vmax;
+       --rgb: 255,160,220; --a: .42; --mx:  22vw; --my:   8vh; --md: 6.0s; --mdel: .7s; }
+
+  /* 中央两团：从画面正中出发向外炸开，制造「穿过云层」的身临其境感 */
+  .m7{ left: 22vmax; top: 14vmax; width:40vmax; height:40vmax;
+       --rgb: 186,140,255; --a: .54; --mx:  10vw; --my:   6vh; --md: 3.8s; --mdel: .2s; }
+  .m8{ left: 30vmax; top: 10vmax; width:36vmax; height:36vmax;
+       --rgb: 255,214,255; --a: .46; --mx:  -8vw; --my:  10vh; --md: 4.4s; --mdel:1.4s; }
+
+  /* ── 两团爆闪：先用镜子的暖金接住，再交给冷紫，最后整屏洗白 ── */
+  .flare{
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    border-radius: 50%;
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(.2);
+    will-change: transform, opacity;
+  }
+
+  .flare.warm{
+    width: 60vmax; height: 60vmax;
+    background-image: radial-gradient(circle at center,
+      rgba(255,242,214,.95) 0%,
+      rgba(255,206,150,.55) 22%,
+      rgba(255,170,120,.18) 46%,
+      rgba(255,170,120,0)   70%);
+  }
+
+  .flare.cool{
+    width: 118vmax; height: 118vmax;
+    background-image: radial-gradient(circle at center,
+      rgba(255,250,255,1)   0%,
+      rgba(236,202,255,.82) 17%,
+      rgba(190,130,255,.42) 38%,
+      rgba(120, 70,230,.12) 62%,
+      rgba(120, 70,230,0)   80%);
+  }
+
+  body.warping .flare.warm{ animation: flareWarm 1.9s cubic-bezier(.3,.1,.6,1) forwards; }
+  body.warping .flare.cool{ animation: flareCool 1.6s cubic-bezier(.4,.05,.75,.5) 1.4s forwards; }
+
+  @keyframes flareWarm{
+    0%  { opacity: 0;   transform: translate(-50%,-50%) scale(.10); }
+    20% { opacity: .95; transform: translate(-50%,-50%) scale(.40); }
+    100%{ opacity: 0;   transform: translate(-50%,-50%) scale(1.55); }
+  }
+
+  /* 过曝点要落在转场结束之前：最亮的一刻正好也是跳转的一刻的话，
+     下一页（深色）会在全白里硬切进来。让它亮起来、再化开，最后在暗里落地。 */
+  @keyframes flareCool{
+    0%  { opacity: 0;   transform: translate(-50%,-50%) scale(.22); }
+    55% { opacity: .95; transform: translate(-50%,-50%) scale(.92); }
+    78% { opacity: .62; transform: translate(-50%,-50%) scale(1.42); }
+    100%{ opacity: 0;   transform: translate(-50%,-50%) scale(1.95); }
+  }
+
   @media (prefers-reduced-motion: reduce){
     .verse{ animation-duration: .01ms; opacity: 1; transform: none; }
     body.is-mirror .glow::after{ animation: none; }
+    /* 不要直接 animation:none —— 雾的基准 opacity 就是 0，一关动画等于整层消失，
+       这几秒就只剩一块纯色。留成静止但看得见的一层柔光。 */
+    body.warping .mist i{ animation: none; opacity: .40; transform: none; }
+    body.warping .flare.warm{ animation-duration: .01ms; animation-delay: 0s; }
+    body.warping .flare.cool{ animation-duration: .9s; animation-delay: .15s; }
   }
 </style>
 </head>
@@ -213,11 +358,24 @@
 
   <p class="verse">镜子是通往另一个宇宙的通道</p>
 
-  <p class="hint" aria-hidden="true">轻触镜子 · 进入</p>
+  <p class="hint" aria-hidden="true"> </p>
 
   <div class="glow"      id="glow"      aria-hidden="true"></div>
   <div class="glow-core" id="glowCore"  aria-hidden="true"></div>
   <div class="debug-outline" id="debugOutline" aria-hidden="true"></div>
+
+  <!-- 点击镜子之后盖上来的一层：星流 + 迷雾 + 爆闪 -->
+  <div class="warp" id="warp" aria-hidden="true">
+    <div class="mist">
+      <i class="m1"></i><i class="m2"></i><i class="m3"></i>
+      <i class="m4"></i><i class="m5"></i><i class="m6"></i>
+      <i class="m7"></i><i class="m8"></i>
+    </div>
+    <!-- 画布放在雾之后：星流是主角，雾是它底下的星云底光 -->
+    <canvas id="stars"></canvas>
+    <div class="flare warm"></div>
+    <div class="flare cool"></div>
+  </div>
 
 <script>
 (function () {
@@ -239,23 +397,127 @@
     debug: false // true = 显示红色虚线判定框
   };
 
-  var NEXT_PAGE = 'page2.html';   // 点击镜子后跳转的界面
+  var NEXT_PAGE = 'page3.html';   // 穿越结束后进入的界面
+  // 爆闪在 3.0s 化完，这里多留 250ms 让画面先在暗里落一下再跳，
+  // 免得下一页的深色底直接撞在全白上
+  var NAV_MS    = 3250;           // 迷雾持续多久后跳转
+  var NAV_FAST  = 750;            // 关闭动效时只留一小段淡出
 
-  /* 界面 2 要放这段视频（约 4.7MB）。鼠标一碰到镜子就先开始缓冲，
-     等真的按下去时往往已经拉得差不多了，不至于先黑一会儿屏。 */
-  var WARM_ASSET = 'tunnel.mp4';
-  var warmed = false;
+  /* ── 星流 ──────────────────────────────────────────────────────
+     经典的三维点云推进：每个星点带一个 z，z 不断减小（=向观察者冲来），
+     按 1/z 投影到屏幕。因为用的是「上一帧位置 → 这一帧位置」的连线，
+     速度一快就自然拉成流星一样的拖尾。
+     ────────────────────────────────────────────────────────────── */
+  var STAR_COLORS = [
+    '255,255,255',
+    '216,198,255',   // 薰衣草
+    '255,188,235',   // 粉
+    '168,226,255'    // 青
+  ];
 
-  function warmNext() {
-    if (warmed) return;
-    warmed = true;
-    var v = document.createElement('video');
-    v.preload = 'auto';
-    v.muted = true;
-    v.src = WARM_ASSET;
-    v.style.cssText = 'position:absolute;width:0;height:0;opacity:0;pointer-events:none';
-    document.body.appendChild(v);
-    v.load();
+  function runStarfield() {
+    var cvs = document.getElementById('stars');
+    var ctx = cvs.getContext('2d');
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var w, h, cx, cy;
+
+    function resize() {
+      w  = cvs.width  = Math.max(1, Math.floor(window.innerWidth  * dpr));
+      h  = cvs.height = Math.max(1, Math.floor(window.innerHeight * dpr));
+      cx = w / 2;
+      cy = h / 2;
+    }
+    resize();
+
+    var N = 620;
+    var stars = [];
+    for (var i = 0; i < N; i++) {
+      stars.push({
+        x: Math.random() * 2 - 1,
+        y: Math.random() * 2 - 1,
+        z: Math.random() * 0.9 + 0.1,
+        c: STAR_COLORS[(Math.random() * STAR_COLORS.length) | 0]
+      });
+    }
+
+    var t0 = performance.now();
+    var last = t0;
+    // 视野要窄：fov 决定「z=1 时星点离画面中心多远」。
+    // 取 min(w,h)*0.5 的话，星点一出生就已经贴在屏幕边缘，
+    // 还没来得及变亮就飞出画面了 —— 屏幕上反而什么都看不到。
+    // 收窄到 0.16，星点就是从中心一小簇出发、一路扫到边缘、越扫越亮。
+    var fov = Math.min(w, h) * 0.16;
+
+    function frame(now) {
+      var elapsed = (now - t0) / 1000;
+      var dt = Math.min((now - last) / 1000, 0.05);   // 卡一下就夹住，免得星点瞬移
+      last = now;
+
+      // 越来越快：先缓缓漂，最后是冲刺
+      var speed = 0.35 + elapsed * elapsed * 0.55;
+
+      ctx.globalCompositeOperation = 'lighter';       // 叠加发光，交叠的拖尾会互相提亮
+      ctx.clearRect(0, 0, w, h);
+      ctx.lineCap = 'round';
+
+      for (var i = 0; i < N; i++) {
+        var s = stars[i];
+        var pz = s.z;
+
+        s.z -= speed * dt;
+        if (s.z <= 0.02) {                            // 冲到眼前了：重生到最远处
+          s.z = 1;
+          s.x = Math.random() * 2 - 1;
+          s.y = Math.random() * 2 - 1;
+          s.c = STAR_COLORS[(Math.random() * STAR_COLORS.length) | 0];
+          pz = 1;
+        }
+
+        var x1 = cx + s.x / pz  * fov;
+        var y1 = cy + s.y / pz  * fov;
+        var x2 = cx + s.x / s.z * fov;
+        var y2 = cy + s.y / s.z * fov;
+
+        // 越近越亮越大
+        var near = 1 - s.z;
+        var alpha = near * near * 1.9;
+        if (alpha > 1) alpha = 1;
+        if (alpha <= 0.012) continue;
+
+        ctx.strokeStyle = 'rgba(' + s.c + ',' + alpha.toFixed(3) + ')';
+        ctx.lineWidth = (0.6 + near * 2.4) * dpr;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      }
+
+      starRaf = requestAnimationFrame(frame);
+    }
+
+    starRaf = requestAnimationFrame(frame);
+    window.addEventListener('resize', resize);
+  }
+
+  var starRaf = null;          // 注意：别和上面微光用的 rafId 撞名
+  var warping = false;
+
+  /* ── 点中镜子：起雾、开星流、洗白、进界面 3 ── */
+  function enterWarp() {
+    if (warping) return;
+    warping = true;
+
+    var reduce = window.matchMedia &&
+                 window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    body.classList.remove('is-mirror');
+    body.classList.add('warping');
+
+    if (!reduce) runStarfield();
+
+    setTimeout(function () {
+      window.location.href = NEXT_PAGE;
+    }, reduce ? NAV_FAST : NAV_MS);
   }
 
   var body        = document.body;
@@ -328,7 +590,6 @@
     if (hit !== hovering) {
       hovering = hit;
       body.classList.toggle('is-mirror', hit);
-      if (hit) warmNext();
     }
     kickAnimation();
   }, { passive: true });
@@ -341,13 +602,12 @@
     kickAnimation();
   });
 
-  /* 只有落在镜子上的点击才会跳转 */
+  /* 只有落在镜子上的点击才触发穿越 */
   window.addEventListener('pointerup', function (ev) {
     if (ev.button !== undefined && ev.button !== 0) return;   // 只响应左键/轻触
+    if (warping) return;
     var p = coords(ev);
-    if (inMirror(p.x, p.y)) {
-      window.location.href = NEXT_PAGE;
-    }
+    if (inMirror(p.x, p.y)) enterWarp();
   });
 
   window.addEventListener('resize', layoutDebugOutline);

@@ -3,66 +3,730 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>界面 3 · 待定</title>
+<title>· 房 间 ·</title>
 <style>
+  /* ══════════════════════════════════════════════════════════
+     配色：跟着 mirror.png 走 —— 奶油 / 桃 / 灰玫瑰 / 橄榄 / 青。
+     整体暖、亮、纸感，家具和书脊用这五个色互相点缀。
+     ══════════════════════════════════════════════════════════ */
   :root{
-    --cream: #f8efdb;
-    --gold:  #f2d7a2;
+    --cream:   #f8e8b8;   /* 奶油 */
+    --cream-2: #f3e0b6;
+    --peach:   #f6d0a8;   /* 桃 */
+    --rose:    #b89898;   /* 灰玫瑰 */
+    --rose-d:  #9a7c7c;
+    --olive:   #8a8f6a;   /* 橄榄 */
+    --olive-d: #6f7453;
+    --teal:    #58b8a8;   /* 青 */
+    --teal-d:  #3f8f82;
+
+    --ink:     #4a3b33;   /* 主文字 · 暖棕 */
+    --ink-2:   #7a6a58;   /* 次文字 */
+
+    --wood:    #a98a5f;   /* 暖木 */
+    --wood-d:  #8a6d48;
   }
+
+  *{ box-sizing: border-box; }
+
   html, body{ height: 100%; margin: 0; }
+
   body{
+    background:
+      radial-gradient(ellipse 90% 70% at 85% -5%,
+        rgba(246, 208, 168, .50) 0%, rgba(246, 208, 168, 0) 55%),
+      radial-gradient(ellipse 80% 64% at 6% 104%,
+        rgba(184, 152, 152, .34) 0%, rgba(184, 152, 152, 0) 55%),
+      linear-gradient(180deg, #f5e8ca 0%, #eedfc0 100%);
+    color: var(--ink);
+    font-family: "Songti SC", "Noto Serif SC", "Source Han Serif SC",
+                 "STSong", "SimSun", Georgia, serif;
+    -webkit-font-smoothing: antialiased;
+    overflow: hidden;
+  }
+
+  /* ── 顶部 1/5：留白 ──────────────── */
+  .topband{
+    height: 20%;
+    position: relative;
+  }
+
+  /* ── 下方 4/5：左书架柜 + 右四宫格 ─────────────────────── */
+  .room{
+    height: 80%;
+    display: grid;
+    grid-template-columns: 42fr 58fr;
+    gap: clamp(1rem, 2.4vw, 2.6rem);
+    padding: 0 clamp(1rem, 2.4vw, 2.6rem);
+    padding-bottom: 0;                 /* 柜子要贴底边 */
+  }
+
+  /* ═══════════ 左：书架（3 层）+ 柜子 ═══════════ */
+  .left{
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    min-width: 0;                 /* 否则书的固有宽度会把 42fr 撑爆 */
+  }
+
+  .shelf{
+    flex: 1;
+    min-height: 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    background: #5c5c40;               /* 柜内背板 */
+    border: 9px solid var(--olive);
+    border-bottom: none;
+    border-radius: 6px 6px 0 0;
+    box-shadow:
+      -14px 0 34px rgba(110, 84, 48, .22),
+      inset 0 0 32px rgba(40, 34, 20, .40);
+    cursor: pointer;
+    transition: box-shadow .45s ease, border-color .45s ease;
+  }
+  .shelf:hover{
+    border-color: #9ba080;
+    box-shadow:
+      -14px 0 34px rgba(110, 84, 48, .22),
+      inset 0 0 32px rgba(40, 34, 20, .30),
+      0 0 0 2px rgba(88, 184, 168, .22),
+      0 0 30px rgba(88, 184, 168, .14);
+  }
+
+  .tier{
+    flex: 1 1 0;
+    min-height: 0;
+    position: relative;
+    display: flex;
+    align-items: flex-end;
+    padding: 0 11px;
+    overflow: hidden;
+    border-bottom: 8px solid var(--olive);   /* 层板 */
+  }
+  .tier:last-child{ border-bottom: none; }
+  /* 层板上表面的一道受光 */
+  .tier::after{
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    height: 8px;
+    background: linear-gradient(180deg, rgba(255, 240, 210, .30), rgba(255, 240, 210, 0));
+    pointer-events: none;
+  }
+  /* 上一层投下来的阴影 */
+  .tier + .tier{ background-image: linear-gradient(180deg, rgba(30, 26, 14, .34), rgba(30, 26, 14, 0) 40%); }
+
+  .books{
+    display: flex;
+    align-items: flex-end;
+    width: 100%;
+    height: 100%;
+  }
+
+  .bk{
+    flex: 0 0 auto;
+    width: var(--w);
+    height: var(--h);
+    margin-right: var(--gap, 2px);
+    background-color: var(--c);
+    border-radius: 1.5px 1.5px 0 0;
+    background-image:
+      linear-gradient(90deg,
+        rgba(255, 255, 255, .20) 0%,
+        rgba(255, 255, 255, .05) 22%,
+        rgba(0, 0, 0, .14) 72%,
+        rgba(0, 0, 0, .30) 100%),
+      var(--deco, none);
+    box-shadow: 0 1px 3px rgba(60, 45, 25, .35);
+  }
+  .bk.band{ --deco: linear-gradient(180deg,
+      rgba(246, 232, 184, 0) 30%, rgba(246, 232, 184, .6) 30%,
+      rgba(246, 232, 184, .6) 35%, rgba(246, 232, 184, 0) 35%,
+      rgba(246, 232, 184, 0) 66%, rgba(246, 232, 184, .45) 66%,
+      rgba(246, 232, 184, .45) 70%, rgba(246, 232, 184, 0) 70%); }
+
+  /* 柜子：只露上面半截柜门，底边被屏幕切掉 */
+  .cabinet{
+    height: 22%;
+    min-height: 86px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background: #7a6548;
+    border: 9px solid var(--wood);
+    border-bottom: none;
+    border-radius: 5px 5px 0 0;
+    box-shadow: -14px 0 34px rgba(110, 84, 48, .22);
+    overflow: hidden;
+  }
+  .cabinet::before{                     /* 台面 */
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 15px;
+    background: linear-gradient(180deg, #c9a86a, #a98a5f);
+    border-bottom: 2px solid rgba(60, 45, 25, .45);
+  }
+  .doors{
+    flex: 1;
+    display: flex;
+    margin-top: 15px;
+  }
+  .door{
+    flex: 1;
+    margin: 7px;
+    position: relative;
+    background: linear-gradient(180deg, #9a7f58, #7a6548);
+    border: 2px solid rgba(50, 38, 22, .45);
+    border-radius: 3px 3px 0 0;
+    box-shadow: inset 0 0 14px rgba(40, 30, 18, .30);
+  }
+  .door::after{                         /* 拉手 */
+    content: '';
+    position: absolute;
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #e8c98a, #a97c3f);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .4);
+  }
+
+  /* ═══════════ 右：四宫格（上高下低）═══════════ */
+  .right{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1.62fr 1fr;
+    gap: clamp(.9rem, 1.8vw, 1.6rem);
+    min-height: 0;
+    min-width: 0;
+  }
+
+  .cell{
+    position: relative;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+  }
+
+  /* —— 人物：两个竖着的长方体贴条 —— */
+  .char{
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    gap: clamp(14px, 2.4vw, 30px);
+    padding-bottom: 9%;
+  }
+  .person{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .55rem;
+    text-decoration: none;
+    cursor: pointer;
+  }
+  .person .body{
+    position: relative;
+    width: clamp(26px, 3.4vw, 46px);
+    height: var(--h);
+    border-radius: 9px 9px 4px 4px;
+    background: var(--bg);
+    box-shadow: 0 7px 16px rgba(90, 65, 40, .18);
+    transition: transform .45s cubic-bezier(.2, .7, .3, 1), box-shadow .45s;
+  }
+  .person .body::before{                 /* 头 */
+    content: '';
+    position: absolute;
+    top: -32%;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 66%;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: var(--head);
+  }
+  .person .cap{
+    font-size: clamp(.6rem, .95vw, .74rem);
+    letter-spacing: .24em;
+    text-indent: .24em;
+    color: var(--ink-2);
+  }
+  .person:hover .body{
+    transform: translateY(-6px);
+    box-shadow: 0 15px 28px rgba(90, 65, 40, .26);
+  }
+  .p1{ --bg: linear-gradient(180deg, #c4a4a4, #a88383); --head: #b89898; --h: clamp(76px, 17vh, 150px); }
+  .p2{ --bg: linear-gradient(180deg, #6fc2b4, #3f8f82); --head: #58b8a8; --h: clamp(58px, 13vh, 116px); }
+
+  /* —— 相册：封面贴图 —— */
+  .album-cell{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .album{
+    border: none;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+    width: 94%;
+    height: 94%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .cover-img{
+    display: block;
+    max-width: 100%;
+    max-height: 100%;
+    object-fit: contain;
+    transition: transform .45s cubic-bezier(.2, .7, .3, 1);
+  }
+  .album:hover .cover-img{ transform: translateY(-5px) rotate(-1deg); }
+
+  /* —— 天数计数卡：除了数字，别的字也放大 —— */
+  .counter{
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 1.6rem;
-    background: #241a11;
-    background-image: radial-gradient(ellipse at 50% 40%,
-      rgba(255, 214, 160, .13) 0%,
-      rgba(255, 214, 160, .04) 42%,
-      rgba(0, 0, 0, 0) 72%);
-    color: var(--cream);
-    font-family: "Songti SC", "Noto Serif SC", "Source Han Serif SC",
-                 "STSong", "SimSun", Georgia, serif;
-    -webkit-font-smoothing: antialiased;
+    gap: .5rem;
     text-align: center;
-    padding: 6vw;
+    padding: 4% 4%;
   }
-  h1{
+  .counter .cap{
+    font-size: clamp(1rem, 1.9vw, 1.45rem);
+    letter-spacing: .34em;
+    text-indent: .34em;
+    color: var(--rose-d);
     margin: 0;
-    font-size: clamp(1.3rem, 3.4vw, 2.4rem);
+  }
+  .counter .big{
+    display: flex;
+    align-items: baseline;
+    gap: .4rem;
+  }
+  .counter .big b{
+    font-size: clamp(2.7rem, 5.6vw, 4.2rem);
+    line-height: 1;
     font-weight: 400;
-    letter-spacing: .2em;
-    text-indent: .2em;
-    text-shadow: 0 0 40px rgba(255, 226, 180, .22);
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
   }
-  p{
+  .counter .big span{
+    font-size: clamp(1.1rem, 2.2vw, 1.7rem);
+    letter-spacing: .18em;
+    color: var(--ink-2);
+  }
+  .counter .rule{
+    width: 58%;
+    height: 1px;
+    background: linear-gradient(90deg,
+      rgba(184, 152, 152, 0) 0%, rgba(184, 152, 152, .6) 50%, rgba(184, 152, 152, 0) 100%);
+  }
+  .counter .from{
+    font-size: clamp(.9rem, 1.6vw, 1.2rem);
+    letter-spacing: .24em;
+    text-indent: .24em;
+    color: var(--ink-2);
     margin: 0;
-    font-size: clamp(.72rem, 1.2vw, .9rem);
-    letter-spacing: .32em;
-    text-indent: .32em;
-    color: rgba(242, 215, 162, .62);
   }
-  a{
-    margin-top: 1.2rem;
-    font-size: clamp(.72rem, 1.2vw, .88rem);
-    letter-spacing: .26em;
-    text-indent: .26em;
-    color: var(--gold);
-    text-decoration: none;
-    border-bottom: 1px solid rgba(242, 215, 162, .28);
-    padding-bottom: .32em;
-    transition: border-color .35s ease, color .35s ease;
+
+  /* —— 唱片 —— */
+  .gramo-cell{ overflow: visible; }
+  .player{
+    position: absolute;
+    inset: 0;
+    border: none;
+    background: none;
+    padding: 0;
+    cursor: pointer;
+    font: inherit;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
-  a:hover{
-    color: #ffe9c4;
-    border-color: rgba(255, 233, 196, .75);
+  .record-wrap{
+    position: relative;
+    height: 92%;
+    aspect-ratio: 1;
+    flex: none;
+  }
+  .disc{
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    user-select: none;
+    -webkit-user-drag: none;
+  }
+  .art{
+    position: absolute;
+    left: 49.48%;
+    top: 49.40%;
+    width: 36.5%;
+    aspect-ratio: 1;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background-size: cover;
+    background-position: center;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .16);
+    opacity: 0;                  /* 还没加载过歌：保持中空 */
+    transition: opacity .5s ease;
+    animation: spin 3.2s linear infinite;
+    animation-play-state: paused;   /* 暂停停在原地，继续播接着转 */
+  }
+  .art.on{ opacity: 1; }         /* 加载过歌后常显，暂停也不消失 */
+  .player.playing .art{
+    animation-play-state: running;
+  }
+  @keyframes spin{
+    from{ transform: translate(-50%, -50%) rotate(0deg); }
+    to{ transform: translate(-50%, -50%) rotate(360deg); }
+  }
+
+  /* ── 轻提示 ── */
+  .toast{
+    position: fixed;
+    left: 50%;
+    bottom: 2.4rem;
+    transform: translate(-50%, 14px);
+    padding: .62rem 1.3rem;
+    background: rgba(74, 59, 51, .96);
+    border: 1px solid rgba(246, 232, 184, .35);
+    border-radius: 4px;
+    font-size: .78rem;
+    letter-spacing: .24em;
+    text-indent: .24em;
+    color: var(--cream);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .35s ease, transform .35s ease, visibility 0s linear .35s;
+    z-index: 20;
+    pointer-events: none;
+  }
+  .toast.on{
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, 0);
+    transition: opacity .35s ease, transform .35s ease, visibility 0s;
+  }
+
+  /* ── 相册模态浮层 ── */
+  .album-modal{
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(24, 16, 10, .66);   /* 界面3 变暗 */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .4s ease, visibility 0s linear .4s;
+  }
+  .album-modal.open{
+    opacity: 1;
+    visibility: visible;
+    transition: opacity .4s ease, visibility 0s;
+  }
+  .album-modal iframe{
+    width: 94%;
+    height: 88%;
+    border: none;
+    border-radius: 6px;
+    background: #241b12;
+    box-shadow: 0 30px 80px rgba(0, 0, 0, .6);
+  }
+  .am-close{
+    position: fixed;
+    top: calc(6% - 22px);
+    right: calc(3% - 22px);
+    width: 44px;
+    height: 44px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(40, 28, 16, .85);
+    color: #f6ecd0;
+    font-size: 1.7rem;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 31;
+    transition: background .3s, transform .3s;
+  }
+  .am-close:hover{ background: rgba(20, 12, 6, .95); transform: rotate(90deg); }
+
+  @media (prefers-reduced-motion: reduce){
+    .art{ animation: none; }
+    .album .cover-img, .person .body{ transition: none; }
+  }
+
+  /* ── 窄屏：竖着堆 ── */
+  @media (max-width: 760px){
+    body{ overflow: auto; }
+    .topband{ height: 9vh; }
+    .room{
+      height: auto;
+      grid-template-columns: 1fr;
+      padding: 0 1rem 1rem;
+      gap: 1.2rem;
+    }
+    .left{ min-height: 420px; }
+    .right{ grid-template-rows: minmax(180px, auto) minmax(140px, auto); }
   }
 </style>
 </head>
 <body>
-  <h1>界面 3</h1>
-  <p>内容待定</p>
-  <a href="index.html">← 回到镜子</a>
+
+<div class="topband"></div>
+
+<main class="room">
+
+  <!-- ══ 左：书架 + 柜子 ══ -->
+  <section class="left">
+    <div class="shelf" id="shelf" role="button" tabindex="0" aria-label="书架 · 查看详情">
+      <div class="tier"><div class="books"></div></div>
+      <div class="tier"><div class="books"></div></div>
+      <div class="tier"><div class="books"></div></div>
+    </div>
+    <div class="cabinet">
+      <div class="doors">
+        <div class="door"></div>
+        <div class="door"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 右：四宫格 ══ -->
+  <section class="right">
+
+    <!-- 人物 -->
+    <div class="cell char">
+      <a class="person p1" href="page4.html"><span class="body"></span><span class="cap">人设 · 一</span></a>
+      <a class="person p2" href="page5.html"><span class="body"></span><span class="cap">人设 · 二</span></a>
+    </div>
+
+    <!-- 相册 -->
+    <div class="cell album-cell">
+      <button class="album" id="album" aria-label="相册 · 查看详情">
+        <img class="cover-img" src="album-cover.png" alt="相册" draggable="false">
+      </button>
+    </div>
+
+    <!-- 天数计数 -->
+    <div class="cell counter">
+      <p class="cap">已 经 相 爱</p>
+      <div class="big"><b id="days">0</b><span>天</span></div>
+      <div class="rule"></div>
+      <p class="from">自 2024.07.26</p>
+    </div>
+
+    <!-- 唱片 -->
+    <div class="cell gramo-cell">
+      <button class="player" id="player" aria-pressed="false" aria-label="播放音乐">
+        <span class="record-wrap">
+          <span class="art" id="art" aria-hidden="true"></span>
+          <img class="disc" src="changpian2.png" alt="" draggable="false">
+        </span>
+      </button>
+    </div>
+
+  </section>
+</main>
+
+<div class="album-modal" id="albumModal" aria-hidden="true">
+  <iframe id="albumFrame" title="相册"></iframe>
+  <button class="am-close" id="amClose" aria-label="关闭相册">×</button>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var SINCE = new Date(2024, 6, 26);   // 6 = 7月
+
+  function daysSince() {
+    var now = new Date();
+    var a = new Date(SINCE.getFullYear(), SINCE.getMonth(), SINCE.getDate());
+    var b = new Date(now.getFullYear(),  now.getMonth(),  now.getDate());
+    return Math.round((b - a) / 86400000) + 1;
+  }
+
+  var numEl = document.getElementById('days');
+  var reduce = window.matchMedia &&
+               window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function showCount(target, animate) {
+    if (!animate) { numEl.textContent = target; return; }
+    var DUR = 1100, t0 = performance.now();
+    (function tick(now) {
+      var p = Math.min((now - t0) / DUR, 1);
+      var eased = 1 - Math.pow(1 - p, 3);
+      numEl.textContent = Math.round(target * eased);
+      if (p < 1) requestAnimationFrame(tick);
+    })(t0);
+  }
+
+  var current = daysSince();
+  showCount(current, !reduce);
+
+  function rearm() {
+    var now = new Date();
+    var next = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1);
+    setTimeout(function () {
+      current = daysSince();
+      showCount(current, false);
+      rearm();
+    }, next - now + 1500);
+  }
+  rearm();
+
+  /* ══ 书架：固定种子随机，刷新不跳 ══ */
+  function seeded(seed) {
+    return function () {
+      seed = (seed * 1664525 + 1013904223) % 4294967296;
+      return seed / 4294967296;
+    };
+  }
+
+  /* 书脊色：跟着 mirror 的奶油/桃/灰玫瑰/橄榄/青走 */
+  var SPINES = [
+    '#b89898', '#a07f80', '#c9a888', '#8a8f6a', '#6f7453',
+    '#c9b68a', '#d8c098', '#a98a5f', '#8a6d48', '#c47f6a',
+    '#d8a86a', '#9c7f6a', '#b0a878', '#7f8f7f', '#c9a4a4'
+  ];
+  var BRIGHT = ['#f8e8b8', '#58b8a8', '#f0b06a', '#d8d0a0'];
+
+  var tiers = document.querySelectorAll('.tier .books');
+  var rand = seeded(20240726);
+
+  Array.prototype.forEach.call(tiers, function (row) {
+    var frag = document.createDocumentFragment();
+    var budget = 46;
+    while (budget-- > 0) {
+      var bright = rand() < 0.09;
+      var pool = bright ? BRIGHT : SPINES;
+      var b = document.createElement('i');
+      b.className = 'bk' + (rand() < 0.34 ? ' band' : '');
+      var h = 0.58 + rand() * 0.39;
+      if (rand() < 0.13) h = 0.42 + rand() * 0.12;
+      b.style.setProperty('--w', (7 + rand() * 15).toFixed(1) + 'px');
+      b.style.setProperty('--h', (h * 100).toFixed(1) + '%');
+      b.style.setProperty('--c', pool[(rand() * pool.length) | 0]);
+      b.style.setProperty('--gap', (1 + rand() * 3).toFixed(1) + 'px');
+      frag.appendChild(b);
+      if (rand() < 0.07) {
+        var gap = document.createElement('span');
+        gap.style.cssText = 'flex:0 0 ' + (10 + rand() * 26).toFixed(0) + 'px';
+        frag.appendChild(gap);
+      }
+    }
+    row.appendChild(frag);
+  });
+
+  /* ══ 提示 ══ */
+  var toastEl = document.getElementById('toast');
+  var toastTimer = null;
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('on');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove('on'); }, 1900);
+  }
+
+  /* ══ 书架 / 相册：详情页还没做 ══ */
+  var shelf = document.getElementById('shelf');
+  function shelfDetail() { toast('书架详情 · 待定'); }
+  shelf.addEventListener('click', shelfDetail);
+  shelf.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); shelfDetail(); }
+  });
+
+  /* ══ 相册：弹出翻开的相册（模态浮层，界面3 变暗） ══ */
+  var albumModal = document.getElementById('albumModal');
+  var albumFrame = document.getElementById('albumFrame');
+
+  document.getElementById('album').addEventListener('click', function () {
+    // 每次打开都重载 iframe（带时间戳防缓存），这样能立刻看到编辑器刚保存的排版
+    albumFrame.src = 'album.html?open=' + Date.now();
+    albumModal.classList.add('open');
+    albumModal.setAttribute('aria-hidden', 'false');
+  });
+
+  function closeAlbum() {
+    albumModal.classList.remove('open');
+    albumModal.setAttribute('aria-hidden', 'true');
+  }
+
+  document.getElementById('amClose').addEventListener('click', closeAlbum);
+  albumModal.addEventListener('click', function (e) {
+    if (e.target === albumModal) closeAlbum();   // 点遮罩关闭
+  });
+  window.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && albumModal.classList.contains('open')) closeAlbum();
+  });
+
+  /* ══ 唱片 ══ */
+  var player = document.getElementById('player');
+  var art = document.getElementById('art');
+  var disc = document.querySelector('.disc');
+  var audio = null;
+  var trackIndex = 0;
+
+  // 两首歌（都带专辑封面；封面已用脚本从 mp3 里提取成 cover-*.jpg）
+  var TRACKS = [
+    { src: 'music/JVKE - golden hour.mp3', cover: 'cover-golden-hour.jpg', title: 'golden hour' },
+    { src: 'music/polnalyubvi - Твои глаза.mp3', cover: 'cover-your-eyes.jpg', title: 'Твои глаза' }
+  ];
+
+  function loadTrack(i) {
+    trackIndex = (i + TRACKS.length) % TRACKS.length;
+    var t = TRACKS[trackIndex];
+    if (audio) audio.src = t.src;
+    art.style.backgroundImage = 'url("' + t.cover + '")';
+    art.classList.add('on');     // 只要加载过就常显，暂停也不消失；切歌时这里换成下一首封面
+    player.setAttribute('aria-label', '播放音乐 · ' + t.title);
+  }
+
+  player.addEventListener('click', function () {
+    if (!TRACKS.length) { toast('音乐还没放进来 · 放到 dreamer 目录下即可'); return; }
+
+    if (!audio) {
+      audio = new Audio();
+      audio.addEventListener('error', function () {
+        toast('读不到 ' + TRACKS[trackIndex].src);
+        setPlaying(false);
+      });
+      audio.addEventListener('ended', function () {
+        loadTrack(trackIndex + 1);          // 一首放完自动接下一首（循环）
+        audio.play().catch(function () {});
+      });
+      loadTrack(0);
+      disc.src = 'changpian.png';   // 第一次播放：唱片从默认的 changpian2.png 换成 changpian.png
+    }
+
+    if (audio.paused) {
+      audio.play().then(function () { setPlaying(true); })
+               .catch(function () { toast('浏览器拦下了播放，再点一次试试'); setPlaying(false); });
+    } else {
+      audio.pause();
+      setPlaying(false);
+    }
+  });
+
+  function setPlaying(on) {
+    player.classList.toggle('playing', on);
+    player.setAttribute('aria-pressed', on ? 'true' : 'false');
+  }
+})();
+</script>
 </body>
 </html>

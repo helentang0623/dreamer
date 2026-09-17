@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>· 我 们 ·</title>
+<style>
+  *{ box-sizing: border-box; }
+
+  html, body{ height: 100%; margin: 0; }
+
+  body{
+    /* 桌面：暖木色，让翻开的相册沉在上面 */
+    background: radial-gradient(ellipse 120% 90% at 50% 0%,
+      #34261a 0%, #221812 70%, #180f0a 100%);
+    font-family: "Songti SC", "Noto Serif SC", "Source Han Serif SC",
+                 "STSong", "SimSun", Georgia, serif;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  /* ── 翻开的相册 ── */
+  .album{
+    position: relative;
+    width: 96%;
+    height: 92%;
+    display: flex;
+    border-radius: 6px;
+    /* 封底的暗影 */
+    box-shadow: 0 40px 90px rgba(0, 0, 0, .6), 0 6px 22px rgba(0, 0, 0, .45);
+  }
+
+  .page{
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    background:
+      linear-gradient(180deg, #fbf3e2 0%, #f4e9d4 100%);
+    overflow: hidden;
+  }
+
+  /* 页面的纸张纤维感：极淡的竖纹 */
+  .page::after{
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(90deg,
+      rgba(180, 150, 110, .03) 0 1px, rgba(180, 150, 110, 0) 1px 3px);
+    pointer-events: none;
+  }
+
+  /* 书脊（中线）两侧的装订阴影 */
+  .page.left{ border-radius: 4px 0 0 4px; }
+  .page.left .gutter{
+    position: absolute; top: 0; right: 0; bottom: 0; width: 46px;
+    background: linear-gradient(90deg,
+      rgba(0,0,0,0) 0%, rgba(70, 45, 20, .18) 70%, rgba(70, 45, 20, .30) 100%);
+  }
+  .page.right{ border-radius: 0 4px 4px 0; }
+  .page.right .gutter{
+    position: absolute; top: 0; left: 0; bottom: 0; width: 46px;
+    background: linear-gradient(270deg,
+      rgba(0,0,0,0) 0%, rgba(70, 45, 20, .18) 70%, rgba(70, 45, 20, .30) 100%);
+  }
+
+  /* 外缘的页叠 */
+  .page.left::before{
+    content: '';
+    position: absolute; top: 2%; left: 0; bottom: 2%; width: 7px;
+    background: linear-gradient(90deg, rgba(60, 40, 20, .25), rgba(60, 40, 20, 0));
+  }
+  .page.right::before{
+    content: '';
+    position: absolute; top: 2%; right: 0; bottom: 2%; width: 7px;
+    background: linear-gradient(270deg, rgba(60, 40, 20, .25), rgba(60, 40, 20, 0));
+  }
+
+  /* 中线：一条细细的装订缝 */
+  .crease{
+    position: absolute;
+    top: 0; bottom: 0; left: 50%;
+    width: 1px;
+    transform: translateX(-50%);
+    background: rgba(90, 60, 30, .18);
+    z-index: 3;
+    pointer-events: none;
+  }
+
+  /* 空页（最后一页右半边没照片） */
+  .page.empty .photos::after{
+    content: '· · ·';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.4rem;
+    letter-spacing: .4em;
+    color: rgba(120, 95, 60, .35);
+  }
+
+  /* ── 照片区 ── */
+  /* 绝对定位：位置由 album-layout.js 计算，可被 localStorage 保存的排版覆盖 */
+  .photos{
+    position: absolute;
+    inset: 3% 4%;
+  }
+
+  .polaroid{
+    position: absolute;
+    margin: 0;
+    transform: rotate(var(--r, 0deg));
+    cursor: pointer;
+    transition: transform .3s cubic-bezier(.2, .7, .3, 1);
+  }
+  .polaroid img{
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 3px;
+    box-shadow: 0 12px 26px rgba(52, 34, 12, .38), 0 3px 8px rgba(52, 34, 12, .22);
+    transition: box-shadow .3s;
+  }
+  .polaroid:hover{
+    transform: rotate(0deg) translateY(-5px);
+    z-index: 40;
+  }
+  .polaroid:hover img{
+    box-shadow: 0 22px 46px rgba(36, 22, 6, .5), 0 6px 14px rgba(36, 22, 6, .3);
+  }
+
+  /* ── 翻页热区 ── */
+  .nav{
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 9%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 20;
+  }
+  .nav.prev{ left: 0; }
+  .nav.next{ right: 0; }
+  .nav .arrow{
+    font-size: clamp(1.6rem, 3vw, 2.4rem);
+    color: rgba(138, 109, 72, .0);
+    text-shadow: 0 2px 6px rgba(0, 0, 0, .3);
+    transition: color .3s, transform .3s;
+    user-select: none;
+  }
+  .nav:hover .arrow{ color: rgba(138, 109, 72, .9); }
+  .nav.prev:hover .arrow{ transform: translateX(-4px); }
+  .nav.next:hover .arrow{ transform: translateX(4px); }
+  .nav.disabled{ cursor: default; opacity: .25; }
+  .nav.disabled:hover .arrow{ color: rgba(138, 109, 72, .0); transform: none; }
+
+  /* ── 页码 ── */
+  .pager{
+    position: absolute;
+    left: 50%;
+    bottom: 1.6%;
+    transform: translateX(-50%);
+    font-size: .72rem;
+    letter-spacing: .3em;
+    color: rgba(120, 95, 60, .55);
+    z-index: 5;
+    pointer-events: none;
+  }
+
+  /* ── 大图灯箱 ── */
+  .lightbox{
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .lightbox[hidden]{ display: none; }
+  .lb-bg{
+    position: absolute;
+    inset: 0;
+    background: rgba(12, 7, 4, .88);
+  }
+  .lb-fig{
+    position: relative;
+    max-width: 88%;
+    max-height: 86%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: .8rem;
+  }
+  .lb-fig img{
+    max-width: 100%;
+    max-height: 76vh;
+    object-fit: contain;
+    background: #0c0704;
+    box-shadow: 0 20px 70px rgba(0, 0, 0, .7);
+    border-radius: 2px;
+  }
+  .lb-fig figcaption{
+    text-align: center;
+    color: #e8dcc0;
+  }
+  .lb-fig figcaption b{
+    display: block;
+    font-weight: 400;
+    font-size: clamp(1rem, 1.8vw, 1.35rem);
+    letter-spacing: .22em;
+  }
+  .lb-fig figcaption span{
+    display: block;
+    margin-top: .3rem;
+    font-size: clamp(.72rem, 1.2vw, .9rem);
+    letter-spacing: .2em;
+    color: rgba(232, 220, 192, .6);
+  }
+
+  .lb-close{
+    position: absolute;
+    top: 3.5%;
+    right: 4%;
+    width: 42px; height: 42px;
+    border: none; border-radius: 50%;
+    background: rgba(0, 0, 0, .42);
+    color: #e8dcc0;
+    font-size: 1.7rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background .3s, transform .3s;
+  }
+  .lb-close:hover{ background: rgba(0, 0, 0, .68); transform: rotate(90deg); }
+
+  .lb-nav{
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 54px; height: 54px;
+    border: none; border-radius: 50%;
+    background: rgba(0, 0, 0, .38);
+    color: #e8dcc0;
+    font-size: 2rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background .3s;
+  }
+  .lb-nav:hover{ background: rgba(0, 0, 0, .62); }
+  .lb-prev{ left: 3%; }
+  .lb-next{ right: 3%; }
+
+  @media (prefers-reduced-motion: reduce){
+    .polaroid{ transition: none; }
+  }
+</style>
+</head>
+<body>
+
+  <div class="album" id="album">
+    <div class="page left" id="pageL">
+      <div class="photos"></div>
+      <div class="gutter"></div>
+    </div>
+    <div class="page right" id="pageR">
+      <div class="photos"></div>
+      <div class="gutter"></div>
+    </div>
+    <div class="crease"></div>
+
+    <div class="nav prev" id="navPrev" aria-label="上一页"><span class="arrow">‹</span></div>
+    <div class="nav next" id="navNext" aria-label="下一页"><span class="arrow">›</span></div>
+    <div class="pager" id="pager"></div>
+  </div>
+
+  <div class="lightbox" id="lb" hidden>
+    <div class="lb-bg" id="lbBg"></div>
+    <figure class="lb-fig">
+      <img id="lbImg" src="" alt="">
+      <figcaption id="lbMeta"></figcaption>
+    </figure>
+    <button class="lb-close" id="lbClose" aria-label="关闭">×</button>
+    <button class="lb-nav lb-prev" id="lbPrev" aria-label="上一张">‹</button>
+    <button class="lb-nav lb-next" id="lbNext" aria-label="下一张">›</button>
+  </div>
+
+<script src="album-data.js"></script>
+<script src="album-dims.js"></script>
+<script src="album-layout.js"></script>
+<script src="album-saved.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var PHOTOS = window.AlbumLayout.loadPhotos();
+  var PAGE_SIZE = 4;
+
+  function thumb(p) { return window.AlbumLayout.photoThumb(p); }
+  function medium(p) { return window.AlbumLayout.photoMedium(p); }
+  function dateStr(p) { return String(p.date || '').replace(/-/g, '.'); }
+
+  /* 读取编辑器保存的排版（localStorage）；其次用提交进仓库的 album-layout-saved.js；
+     都没有就用默认（album-layout.js 算出来的） */
+  var SAVED = null;
+  try {
+    SAVED = JSON.parse(localStorage.getItem('dreamer.album.layout') || 'null');
+  } catch (e) { SAVED = null; }
+  if (!SAVED && window.ALBUM_LAYOUT) SAVED = window.ALBUM_LAYOUT;
+
+  var byN = {};
+  PHOTOS.forEach(function (p) { byN[p.n] = p; });
+
+  /* 分页：每页 4 张 → 11 页 → 6 个对开 */
+  var pages = [];
+  for (var i = 0; i < PHOTOS.length; i += PAGE_SIZE) {
+    pages.push(PHOTOS.slice(i, i + PAGE_SIZE));
+  }
+  var spreads = [];
+  for (var j = 0; j < pages.length; j += 2) {
+    spreads.push([pages[j], pages[j + 1] || null]);
+  }
+
+  var elL = document.getElementById('pageL');
+  var elR = document.getElementById('pageR');
+  var navPrev = document.getElementById('navPrev');
+  var navNext = document.getElementById('navNext');
+  var pager = document.getElementById('pager');
+
+  function renderPage(el, list) {
+    var box = el.querySelector('.photos');
+    box.innerHTML = '';
+    if (!list || !list.length) {
+      el.classList.add('empty');
+      return;
+    }
+    el.classList.remove('empty');
+
+    var boxW = box.clientWidth, boxH = box.clientHeight;
+    var defs = window.AlbumLayout.computeLayout(list, boxW, boxH);
+
+    defs.forEach(function (pos) {
+      var s = SAVED && SAVED[pos.n];
+      if (s) {
+        if (typeof s.x === 'number') pos.x = s.x;
+        if (typeof s.y === 'number') pos.y = s.y;
+        if (typeof s.w === 'number') pos.w = s.w;
+        if (typeof s.r === 'number') pos.r = s.r;
+      }
+
+      var p = byN[pos.n];
+      var fig = document.createElement('figure');
+      fig.className = 'polaroid';
+      fig.style.left = pos.x.toFixed(2) + '%';
+      fig.style.top = pos.y.toFixed(2) + '%';
+      fig.style.width = pos.w.toFixed(2) + '%';
+      fig.style.setProperty('--r', pos.r.toFixed(1) + 'deg');
+
+      var img = document.createElement('img');
+      img.loading = 'lazy';
+      img.alt = p.name;
+      img.src = thumb(p);
+
+      fig.appendChild(img);
+      fig.addEventListener('click', (function (pp) {
+        return function () { openLightbox(PHOTOS.indexOf(pp)); };
+      })(p));
+
+      box.appendChild(fig);
+    });
+  }
+
+  var cur = 0;
+  function render() {
+    var sp = spreads[cur];
+    renderPage(elL, sp[0]);
+    renderPage(elR, sp[1]);
+    pager.textContent = (cur + 1) + ' / ' + spreads.length;
+    navPrev.classList.toggle('disabled', cur === 0);
+    navNext.classList.toggle('disabled', cur >= spreads.length - 1);
+  }
+
+  navPrev.addEventListener('click', function () {
+    if (cur > 0) { cur--; render(); }
+  });
+  navNext.addEventListener('click', function () {
+    if (cur < spreads.length - 1) { cur++; render(); }
+  });
+
+  /* ── 灯箱 ── */
+  var lb = document.getElementById('lb');
+  var lbImg = document.getElementById('lbImg');
+  var lbMeta = document.getElementById('lbMeta');
+  var lbIndex = 0;
+
+  function openLightbox(i) {
+    lbIndex = i;
+    var p = PHOTOS[i];
+    lbImg.src = medium(p);
+    lbImg.alt = p.name;
+    lbMeta.innerHTML = '<b>' + p.name + '</b><span>' + dateStr(p) + '</span>';
+    lb.hidden = false;
+  }
+  function closeLightbox() { lb.hidden = true; }
+  function stepLightbox(d) {
+    lbIndex = (lbIndex + d + PHOTOS.length) % PHOTOS.length;
+    openLightbox(lbIndex);
+  }
+
+  document.getElementById('lbClose').addEventListener('click', closeLightbox);
+  document.getElementById('lbBg').addEventListener('click', closeLightbox);
+  document.getElementById('lbPrev').addEventListener('click', function (e) { e.stopPropagation(); stepLightbox(-1); });
+  document.getElementById('lbNext').addEventListener('click', function (e) { e.stopPropagation(); stepLightbox(1); });
+
+  window.addEventListener('keydown', function (e) {
+    if (!lb.hidden) {
+      if (e.key === 'Escape') closeLightbox();
+      else if (e.key === 'ArrowLeft') stepLightbox(-1);
+      else if (e.key === 'ArrowRight') stepLightbox(1);
+    } else {
+      if (e.key === 'ArrowLeft' && cur > 0) { cur--; render(); }
+      else if (e.key === 'ArrowRight' && cur < spreads.length - 1) { cur++; render(); }
+    }
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
